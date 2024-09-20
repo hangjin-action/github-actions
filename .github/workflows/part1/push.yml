@@ -8,6 +8,6 @@ jobs:
       - name: step1
         run: echo hello world
       - name: step2
-        run: |
+        run: | # 멀티 라인 커맨드 실행하기 위해
           echo hello world
           echo github actions
