@@ -1,6 +1,6 @@
 name: re-run
 on: push
-
+# 트리거된 시점에서 다시 실행한다. 즉 해당 커밋시점으로 다시 실행한다는 의미이다.
 jobs:
   test:
     runs-on: ubuntu-latest
