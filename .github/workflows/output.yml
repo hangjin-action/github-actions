@@ -11,7 +11,7 @@ jobs:
   create-output:
     runs-on: ubuntu-latest
     outputs:
-      hi: ${{ secrets.TEST_JSON }}
+      test: ${{ steps.check-output.outputs.test }}
     steps:
       - name: echo output
         id: check-output
@@ -26,4 +26,4 @@ jobs:
     needs: create-output
     steps:
       - name: get output
-        run: echo ${{ needs.create-output.outputs.hi }}
+        run: echo ${{ steps.check-output.outputs.test }}
