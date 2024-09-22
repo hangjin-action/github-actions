@@ -17,6 +17,7 @@ jobs:
       - name: check env & secret
         run: |
           echo ${{ vars.level }}
+          echo ${{ vars.test_var }}
           echo ${{ secrets.key }}
   get-env-prod:
     runs-on: ubuntu-latest
@@ -25,4 +26,5 @@ jobs:
       - name: check env & secret
         run: |
           echo ${{ vars.level }}
+          echo ${{ vars.test_var }}
           echo ${{ secrets.key }}
