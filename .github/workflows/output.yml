@@ -11,7 +11,7 @@ jobs:
   create-output:
     runs-on: ubuntu-latest
     outputs:
-      test: hello
+      test: ${{ secrets.TEST_JSON }}
     steps:
       - name: echo output
         id: check-output
