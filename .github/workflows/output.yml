@@ -26,4 +26,4 @@ jobs:
     needs: create-output
     steps:
       - name: get output
-        run: echo ${{ steps.check-output.outputs.test }}
+        run: echo ${{ needs.create-output.outputs.test }}
