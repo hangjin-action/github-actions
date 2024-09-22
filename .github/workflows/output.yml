@@ -11,7 +11,7 @@ jobs:
   create-output:
     runs-on: ubuntu-latest
     outputs:
-      test: ${{ steps.check-output.outputs.test }}
+      test: hello
     steps:
       - name: echo output
         id: check-output
