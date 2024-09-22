@@ -1,0 +1,12 @@
+name: tag-filter
+on:
+  push:
+    tags:         # push event일때만 사용가능함
+      - v*.*.*
+
+jobs:
+  tag-filter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo
+        run: echo hello
