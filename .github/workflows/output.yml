@@ -10,6 +10,8 @@ on: push
 jobs:
   create-output:
     runs-on: ubuntu-latest
+    outputs:
+      hi: ${{ secrets.TEST_JSON }}
     steps:
       - name: echo output
         id: check-output
@@ -18,3 +20,10 @@ jobs:
       - name: check output
         run: |
           echo ${{ steps.check-output.outputs.test }}
+          
+  get-output:
+    runs-on: ubuntu-latest
+    needs: create-output
+    steps:
+      - name: get output
+        run: echo ${{ needs.create-output.outputs.hi }}
