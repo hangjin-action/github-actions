@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - ".github/workflows/part1/*" # 이경로에 파일이 변경될때만 동작하는 워크플로우디
+      - "!.github/workflows/part1/push.yml" # push.yml이 변경될때는 무
 
 jobs:
   path-filter:
