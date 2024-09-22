@@ -1,0 +1,12 @@
+name: path-filter
+on:
+  push:
+    paths:
+      - ".github/workflows/part1/*" # 이경로에 파일이 변경될때만 동작하는 워크플로우디
+
+jobs:
+  path-filter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo hello
+        run: echo hello
