@@ -19,7 +19,7 @@ jobs:
           echo "test=hello" >> $GITHUB_OUTPUT
       - name: check output
         run: |
-          echo ${{ secrets.TEST_JSON }}
+          echo "${{ secrets.TEST_JSON }}"
           echo ${{ steps.check-output.outputs.test }}
           
   get-output:
