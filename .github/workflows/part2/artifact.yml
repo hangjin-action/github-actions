@@ -8,7 +8,7 @@ jobs:
       - name: echo
         run: echo hello world > hello.txt
       - name: upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3 # 워크플로우 실행중 생성된 파일 또는 파일 모음 job 사이에 데이터 공유
         with:
           name: artifact-test
           path: ./hello.txt
