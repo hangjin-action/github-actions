@@ -23,6 +23,7 @@ jobs:
               echo level=$keyword >> $GITHUB_OUTPUT
             fi
           done
+          echo ${{ steps.get-keyword.outputs.level }}
 
   slack:
     runs-on: ubuntu-latest
