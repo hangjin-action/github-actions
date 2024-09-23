@@ -14,7 +14,7 @@ jobs:
       - name: create-repo
         id: create_repo
         env:
-          GH_TOKEN: ${{ PERSONAL_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           gh repo create ${{ inputs.name }}
       - name: slack
