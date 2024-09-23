@@ -32,17 +32,14 @@ jobs:
         with:
           payload: |
             {
-              "attachments" : [
+              "text": "Create Repo result: ${{ steps.create-repo.outcome }}",
+              "blocks": [
                 {
-                  "pretext": "create repo result",
-                  "color": "28a745",
-                  "fields": [
-                    {
-                      "title": "create repo result ${{steps.create-repo.outcome }}",
-                      "short": true,
-                      "value": "${{ inputs.prefix }}-${{ inputs.name }}"  
-                    }
-                  ]
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "repo name : ${{ inputs.prefix }}-${{ inputs.name }}"
+                  }
                 }
               ]
             }
