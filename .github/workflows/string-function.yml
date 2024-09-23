@@ -13,7 +13,7 @@ jobs:
         run: echo "git"
       - name: endswith
         if: endsWith('github actions', 'ions')
-        run: echo "git"
+        run: echo "ions"
       - name: endswith
         if: endsWith('github actions', 'test')
         run: echo "git"
@@ -21,5 +21,5 @@ jobs:
         if: contains('github actions', 'act')
         run: echo "contains act"
       - name: contains
-        if: contains('github actions', 'test')
-        run: echo "contains test"
+        if: contains('github, actions', 'hub')
+        run: echo "contains hub"
