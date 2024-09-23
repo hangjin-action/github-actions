@@ -20,13 +20,14 @@ jobs:
   auto-create-repo:
     runs-on: ubuntu-latest
     steps:
-      - name: create-repo
-        id: create_repo
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: |
+#      - name: create-repo
+#        id: create_repo
+#        env:
+#          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+#        run: |
 #          gh repo create --public ${{ inputs.prefix }}-${{ inputs.name }}
-          exit 1
+      - name: test
+        run: echo hello
       - name: slack
         if: always()
         uses: slackapi/slack-github-action@v1.27.0
