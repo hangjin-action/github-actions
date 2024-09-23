@@ -18,36 +18,40 @@ jobs:
           echo level=Undefined >> $GITHUB_OUTPUT
 
           keywords=$(cat keyword-list.txt)
-          for keyword in $keywords; do
-            if [[ "${{ github.event.issue.title }}" =~ "$keyword" ]]; then
+          for keyword in $keywords
+          do
+            if [ "${{ github.event.issue.title }}" = "$keyword" ]
+            then
               echo level=$keyword >> $GITHUB_OUTPUT
             fi
           done
+      - name: echo
+        run: echo ${{ steps.get-keyword.outputs.level }}
 
-  slack:
-    runs-on: ubuntu-latest
-    needs: get-keyword
-    environment: ${{ needs.get-keyword.outputs.level }}
-    steps:
-      - name: send slack
-        uses: slackapi/slack-github-action@v1.27.0
-        with:
-          payload: |
-            {
-              "attachments": [
-                {
-                  "pretext": "이슈 발행",
-                  "color": "28a745",
-                  "fields": [
-                    {
-                      "title": "issue가 발행되었습니다.",
-                      "short": true,
-                      "value": "${{ github.event.issue.title }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+#  slack:
+#    runs-on: ubuntu-latest
+#    needs: get-keyword
+#    environment: ${{ needs.get-keyword.outputs.level }}
+#    steps:
+#      - name: send slack
+#        uses: slackapi/slack-github-action@v1.27.0
+#        with:
+#          payload: |
+#            {
+#              "attachments": [
+#                {
+#                  "pretext": "이슈 발행",
+#                  "color": "28a745",
+#                  "fields": [
+#                    {
+#                      "title": "issue가 발행되었습니다.",
+#                      "short": true,
+#                      "value": "${{ github.event.issue.title }}"
+#                    }
+#                  ]
+#                }
+#              ]
+#            }
+#        env:
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+#          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
