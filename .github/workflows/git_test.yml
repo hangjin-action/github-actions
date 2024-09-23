@@ -1,0 +1,12 @@
+name: git test
+on:
+  push:
+    branches: ['dev', 'prod']
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo
+        run: |
+          echo ${{ toJSON(github) }}
