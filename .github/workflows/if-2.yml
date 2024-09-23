@@ -1,0 +1,10 @@
+name: if-condition 2
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo github
+        run: echo ${{ toJSON(github) }}
