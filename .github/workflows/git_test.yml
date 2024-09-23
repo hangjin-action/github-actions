@@ -6,7 +6,8 @@ on:
 jobs:
   job1:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
     steps:
       - name: echo
         run: |
-          echo "${{ toJSON(github) }}"
+          echo ${{ vars.level }}
