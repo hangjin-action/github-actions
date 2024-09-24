@@ -33,7 +33,7 @@ jobs:
 #    environment: ${{ needs.get-keyword.outputs.level }}
     strategy:
       matrix:
-        environment: ${{ needs.get-keyword.outputs.level }}
+        environment: ["${{ needs.get-keyword.outputs.level }}"]
     environment: ${{ matrix.environment }}
     steps:
       - name: send slack
