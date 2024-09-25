@@ -13,36 +13,99 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-#      - name: setup node
-#        uses: actions/setup-node@v4
-#        with:
-#          node-version: 18
-#      - name: cache node.js modules
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/.npm
-#          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-#          restore-keys: |
-#            ${{ runner.os }}-node-
-#      - name: Install dependencies
-#        run: |
-#          cd my-app
-#          npm ci
-#      - name: npm build
-#        run: |
-#          cd my-app
-#          npm run build
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: cache node.js modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install dependencies
+        run: |
+          cd my-app
+          npm ci
+      - name: npm build
+        run: |
+          cd my-app
+          npm run build
 
   image-build:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:  # 실행되는 액션들이 수행할 수 있는 작업의 권한이나 범위  잡레벨에서 설정
+      id-token: write
+      contents: read
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: Configure AWS Credentials  # aws 접근하는 액션 그러기 위해선 위의 퍼미션 설정을 해줘야함
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+      - name: docker build & push
+        run: |
+          docker build -t ${{ secrets.REGISTRY }}/${{ vars.REPOSITORY }}:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY }}/${{ vars.REPOSITORY }}:${{ github.sha }}
 
   deploy:
     needs: image-build
     runs-on: ubuntu-latest
+    permissions: # 실행되는 액션들이 수행할 수 있는 작업의 권한이나 범위  잡레벨에서 설정
+      id-token: write
+      contents: read
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: Configure AWS Credentials  # aws 접근하는 액션 그러기 위해선 위의 퍼미션 설정을 해줘야함
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      - name: setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - name: setup helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.11.1
+      - name: access kubernetes
+        run: |
+          aws eks update-kubeconfig --name ${{ vars.CLUSTER_NAME }}
+      - name: deploy
+        id: status
+        run: |
+          helm upgrade --install my-app kubernetes/my-app --create-namespace --namespace my-app-${{ vars.SUFFIX }} \
+          --set image.tag=${{ github.sha }} \
+          --set image.repository=${{ secrets.REGISTRY }}/${{ vars.REPOSITORY }}
+      - name: notify
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+            # For posting a rich message using Block Kit
+          payload: |
+              {
+                "text": "message",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Environment : dev, Deploy Result : ${{ steps.status.outcome }}, Repository : ${{ github.repository }}."
+                    }
+                  }
+                ]
+              }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
