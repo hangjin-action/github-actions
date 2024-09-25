@@ -47,16 +47,20 @@ jobs:
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: Login to Amazon ECR Public
+        id: login-ecr-public
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          registry-type: 'public'
-          mask-password: 'true'
-      - name: docker build & push
+          registry-type: public
+
+      - name: Build, tag, and push docker image to Amazon ECR Public
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REPOSITORY: ${{ vars.REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t ${{ secrets.REGISTRY }}/${{ vars.REPOSITORY }}:${{ github.sha }} .
-          docker push ${{ secrets.REGISTRY }}/${{ vars.REPOSITORY }}:${{ github.sha }}
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
 #  deploy:
 #    needs: image-build
