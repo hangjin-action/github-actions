@@ -36,24 +36,22 @@ jobs:
   image-build:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-#    permissions:  # 실행되는 액션들이 수행할 수 있는 작업의 권한이나 범위  잡레벨에서 설정
-#      id-token: write
-#      contents: read
+    permissions:  # 실행되는 액션들이 수행할 수 있는 작업의 권한이나 범위  잡레벨에서 설정
+      id-token: write
+      contents: read
     steps:
       - name: checkout
         uses: actions/checkout@v4
       - name: Config AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       - name: Login to Amazon ECR Public
         id: login-ecr-public
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
-
       - name: Build, tag, and push docker image to Amazon ECR Public
         env:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
