@@ -57,7 +57,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: image-build
+    needs: [set-environment, image-build]
     strategy:
       matrix:
         env: [ "${{ needs.set-environment.outputs.set-env }}" ]
