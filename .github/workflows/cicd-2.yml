@@ -71,6 +71,8 @@ jobs:
     needs: [set-environment, deploy]
     if: needs.set-environment.outputs.set-env == 'dev'
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: create branch
         run: |
           git checkout -b release/${{github.run_id }}
