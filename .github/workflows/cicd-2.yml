@@ -49,19 +49,19 @@ jobs:
     needs: set-environment
     strategy:
       matrix:
-        environment: ["${{ needs.set-environment.outputs.set-env }}"]
-    environment: ${{ matirx.environment }}
+        env: ["${{ needs.set-environment.outputs.set-env }}"]
+    environment: ${{ matirx.env }}
     steps:
       - name: echo
-        run: echo ${{ matrix.environment }}
+        run: echo ${{ matrix.env }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: image-build
     strategy:
       matrix:
-        environment: [ "${{ needs.set-environment.outputs.set-env }}" ]
-    environment: ${{ matirx.environment }}
+        env: [ "${{ needs.set-environment.outputs.set-env }}" ]
+    environment: ${{ matirx.env }}
     steps:
       - name: echo
-        run: ${{ matrix.environment }}
+        run: ${{ matrix.env }}
