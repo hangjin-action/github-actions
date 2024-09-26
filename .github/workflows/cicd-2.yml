@@ -64,4 +64,4 @@ jobs:
     environment: ${{ matrix.env }}
     steps:
       - name: echo
-        run: ${{ matrix.env }}
+        run: echo ${{ matrix.env }}
