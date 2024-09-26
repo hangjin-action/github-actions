@@ -50,7 +50,7 @@ jobs:
     strategy:
       matrix:
         env: ["${{ needs.set-environment.outputs.set-env }}"]
-    environment: ${{ matirx.env }}
+    environment: ${{ matrix.env }}
     steps:
       - name: echo
         run: echo ${{ matrix.env }}
@@ -61,7 +61,7 @@ jobs:
     strategy:
       matrix:
         env: [ "${{ needs.set-environment.outputs.set-env }}" ]
-    environment: ${{ matirx.env }}
+    environment: ${{ matrix.env }}
     steps:
       - name: echo
         run: ${{ matrix.env }}
