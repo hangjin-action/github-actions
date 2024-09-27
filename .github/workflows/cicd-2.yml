@@ -107,4 +107,4 @@ jobs:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           gh pr create --base master --head release/${{github.run_id }} --title "release/${{github.run_id }} -> master" \
-          --fill
+          --body "release pr"
