@@ -2,105 +2,100 @@ name: cicd-3
 on:
   push:
     paths:
-      - "my-app/**"
+      - 'my-app/**'
     tags:
-      - v*.*.*
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     types: [opened, synchronize, closed]
     branches: [dev, master]
     paths:
-      - "my-app/**"
+      - 'my-app/**'
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     if: github.event.action == 'opened' || github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: checkout the code
         uses: actions/checkout@v4
-      - name: setup node
-        uses: actions/setup-node@v4
+      - name: setup-node
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
   set-environment:
-    runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true || github.ref_type == 'tag'
+    runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
     steps:
-      - name: set-env
+      - name: set env
         id: set-env
         run: |
-          if [[ ${{ github.ref_type }} == "tag" ]]
-          then
-            echo environment=qa >> $GITHUB_OUTPUT
+          if [[ ${{ github.ref_type }} == "tag" ]]; then
+            echo "environment=qa" >> $GITHUB_OUTPUT 
             exit 0
           fi
           
-          if [[ ${{ github.ref_type }} == "branch" ]]
-          then
-            if [[ ${{ github.base_ref }} == "master" ]]
-            then
-              echo environment=prod >> $GITHUB_OUTPUT
+          if [[ ${{ github.ref_type }} == "branch" ]]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            if [[ ${{ github.base_ref }} == "master" ]]; then
+              echo "environment=prod" >> $GITHUB_OUTPUT 
             fi
-            echo environment=dev >> $GITHUB_OUTPUT
           fi
       - name: check env
         run: echo ${{ steps.set-env.outputs.environment }}
 
+
   image-build:
     runs-on: ubuntu-latest
     needs: [set-environment]
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         environment: ["${{ needs.set-environment.outputs.environment }}"]
     environment: ${{ matrix.environment }}
-    permissions:
-      id-token: write
-      contents: read
     steps:
-      - name: checkout
+      - name: checkout the code
         uses: actions/checkout@v4
-      - name: Config AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ vars.AWS_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [set-environment, image-build]
+    needs: [ set-environment, image-build ]
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         environment: ["${{ needs.set-environment.outputs.environment }}"]
     environment: ${{ matrix.environment }}
-    permissions:
-      id-token: write
-      contents: read
     steps:
-      - name: checkout
+      - name: checkout the code
         uses: actions/checkout@v4
-      - name: Config AWS credentials
+      - name: Configure AWS Credentials
+        id: credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
   create-pr:
+    if: needs.set-environment.outputs.environment == 'qa'
     runs-on: ubuntu-latest
     needs: [set-environment, deploy]
-    if: needs.set-environment.outputs.environment == 'qa'
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: gh auth login
+        run: |
+          echo ${{ secrets.PERSONAL_ACCESS_TOKEN }} | gh auth login --with-token
       - name: create branch
         run: |
           git checkout -b release/${{ github.ref_name }}
           git push origin release/${{ github.ref_name }}
       - name: create pr
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          gh pr create --base master --head release/${{ github.ref_name }} --title "release/${{github.ref_name }} -> master" \
-          --body "release pr"
+          gh pr create --base master --head release/${{ github.ref_name }} --title "release/${{ github.ref_name }} -> master" --body "release pr"
+
