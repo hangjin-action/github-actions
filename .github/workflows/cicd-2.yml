@@ -60,7 +60,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        environment: ${{ needs.set-environment.outputs.environment }}
+        environment: ["${{ needs.set-environment.outputs.environment }}"]
     environment: ${{ matrix.environment }}
     steps:
       - name: checkout
@@ -79,7 +79,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        environment: ${{ needs.set-environment.outputs.environment }}
+        environment: "${{ needs.set-environment.outputs.environment }}"
     environment: ${{ matrix.environment }}
     steps:
       - name: checkout
