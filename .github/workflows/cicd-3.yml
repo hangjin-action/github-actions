@@ -1,0 +1,47 @@
+name: cicd-3
+on:
+  push:
+    tags:
+      - v*.*.*
+  pull_request:
+    types: [opened, synchronize, closed]
+    branches: [dev, master]
+    paths:
+      - "my-app/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' || github.event.action == 'synchronize'
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+  set-environment:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.ref_type == 'tag'
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: set-env
+        id: set-env
+        run: |
+          if [[ ${{ github.ref_type }} == "tag ]]
+          then
+            echo environment=qa >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          if [[ ${{ github.ref_type }} == "branch" ]]
+          then
+            if [[ ${{ github.base_ref }} == "master"
+            then
+              echo environment=prod >> $GITHUB_OUTPUT
+            fi
+            echo environment=dev >> $GITHUB_OUTPUT
+          fi
+      - name: check env
+        run: echo ${{ steps.set-env.outputs.environment }}
