@@ -52,7 +52,7 @@ jobs:
     needs: [set-environment]
     strategy:
       matrix:
-        environment: ["${{ needs.set-environment.output.environment }}"]
+        environment: ["${{ needs.set-environment.outputs.environment }}"]
     environment: ${{ matrix.environment }}
     permissions:
       id-token: write
