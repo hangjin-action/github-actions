@@ -100,5 +100,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          gh pr create --base master --head release/${{github.run_id }} --title "release/${{github.run_id }} -> master" \
+          gh pr create --base master --head release/${{ github.ref_name }} --title "release/${{github.ref_name }} -> master" \
           --body "release pr"
