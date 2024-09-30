@@ -1,0 +1,167 @@
+name: cicd-3
+on:
+  pull_request:
+    branches: [dev, master]
+    types: [opened, synchronize, closed]
+  push:
+    tags:
+      - v*.*.*
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' || github.event.action == 'synchronize'
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: cache node.js modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install dependencies
+        run: |
+          cd my-app
+          npm ci
+      - name: npm build
+        run: |
+          cd my-app
+          npm run build
+
+  set-environment:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.ref_type == 'tag'
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: set env
+        id: set-env
+        run: |
+          if [[ ${{ github.ref_type }} == 'tag' ]]
+          then
+            echo environment=qa >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          if [[ ${{ github.ref_type }} == 'branch' ]]
+          then
+            echo environment=dev >> $GITHUB_OUTPUT
+            if [[ ${{ github.base_ref }} == 'master' ]]
+            then
+              echo environment=prod >> $GITHUB_OUTPUT
+            fi
+          fi
+      - name: check env
+        run: echo ${{ steps.set-env.outputs.environment }}
+
+  image-build:
+    runs-on: ubuntu-latest
+    needs: set-environment
+    strategy:
+      matrix:
+        environment: ["${{ needs.set-environment.outputs.environment }}"]
+    environment: ${{ matrix.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Config AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build, tag, and push docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [set-environment, image-build]
+    strategy:
+      matrix:
+        environment: ["${{ needs.set-environment.outputs.environment }}"]
+    environment: ${{ matrix.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Config AWS credentials
+        id: credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      - name: setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - name: setup helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.11.1
+      - name: access kubernetes
+        run: |
+          aws eks update-kubeconfig --name ${{ vars.CLUSTER_NAME }}
+      - name: deploy
+        id: status
+        run: |
+          helm upgrade --install my-app kubernetes/my-app --create-namespace --namespace my-app-${{ vars.SUFFIX }} \
+          --set image.tag=${{ github.sha }} \
+          --set image.repository=${{ secrets.REGISTRY }}/${{ vars.REPOSITORY }}
+      - name: notify
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "message",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Environment : ${{ matrix.environment }}, Deploy Result : ${{ steps.status.outcome }}, Repository : ${{ github.repository }}."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  create-pr:
+    runs-on: ubuntu-latest
+    needs: [set-environment, deploy]
+    if: needs.set-environment.outputs.environment == 'qa' # qa환경 배포에 성공하면 운영환경으로 배포할 수있는 pr 생성
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: create branch
+        run: |
+          git checkout -b release/${{ github.ref_name }}
+          git push origin release/${{ github.ref_name }}
+      - name: create pr
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          gh pr create --base master --head release/${{github.ref_name }} --title "release/${{github.ref_name }} -> master" \
+          --body "release pr"
